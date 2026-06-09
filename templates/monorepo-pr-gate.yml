@@ -1,0 +1,51 @@
+# Copy this file to your SIYF app monorepo:
+#   .github/workflows/siyf-pr-gate.yml
+#
+# Blocks PRs that break the parse adjuster / engine offline rings.
+# No CLI for contributors — CI runs automatically on every PR.
+
+name: SIYF engine PR gate
+
+on:
+  pull_request:
+    paths:
+      - 'siyf-chrome/**'
+      - 'siyf-api/**'
+
+jobs:
+  adjuster-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: siyf-chrome/package-lock.json
+
+      - name: Install dependencies
+        working-directory: siyf-chrome
+        run: npm ci
+
+      - name: Drift check (Ring 1 + invariants + kill switch)
+        working-directory: siyf-chrome
+        run: npm run drift:check
+
+      - name: Chaos simulator (Ring 2)
+        working-directory: siyf-chrome
+        run: npm run drift:chaos
+
+      - name: Merge simulation (Ring 6)
+        working-directory: siyf-chrome
+        run: npm run drift:merge
+
+      - name: Kill switch stress (Ring 7)
+        working-directory: siyf-chrome
+        run: npm run drift:kill
+
+      - name: Build extension
+        working-directory: siyf-chrome
+        run: npm run build

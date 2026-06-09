@@ -1,0 +1,90 @@
+# Daily "makesure" — API health, full engine rings, worker deployment.
+# Users never run this. GitHub Actions is the cron job.
+name: Daily makesure
+
+on:
+  schedule:
+    # 15:00 UTC ≈ 10am ET — good pre-game-day window
+    - cron: '0 15 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: siyf-watch-daily
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  SIYF_API_URL: ${{ vars.SIYF_API_URL || 'https://siyf-api.nic-58f.workers.dev' }}
+
+jobs:
+  makesure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout siyf-watch
+        uses: actions/checkout@v4
+
+      - name: Checkout SIYF app monorepo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.SIYF_SOURCE_REPO }}
+          path: siyf-app
+          token: ${{ secrets.SIYF_REPO_TOKEN }}
+
+      - name: Resolve engine + API paths
+        id: paths
+        run: |
+          if [ -f siyf-app/package.json ] && [ -d siyf-app/engine ]; then
+            echo "engine_dir=siyf-app" >> "$GITHUB_OUTPUT"
+          else
+            echo "engine_dir=siyf-app/siyf-chrome" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -f siyf-app/siyf-api/package.json ]; then
+            echo "api_dir=siyf-app/siyf-api" >> "$GITHUB_OUTPUT"
+          else
+            echo "api_dir=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ${{ steps.paths.outputs.engine_dir }}/package-lock.json
+
+      - name: Install engine dependencies
+        working-directory: ${{ steps.paths.outputs.engine_dir }}
+        run: npm ci
+
+      - name: Install API dependencies (wrangler)
+        if: steps.paths.outputs.api_dir != ''
+        working-directory: ${{ steps.paths.outputs.api_dir }}
+        run: npm ci
+
+      - name: Run daily makesure
+        env:
+          SIYF_APP_ROOT: ${{ github.workspace }}/siyf-app
+          SIYF_API_URL: ${{ env.SIYF_API_URL }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node checks/run-daily.mjs
+
+      - name: Upload watch report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: watch-report
+          path: reports/watch-*.json
+          retention-days: 30
+
+      - name: File GitHub issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          REPORT=$(ls reports/watch-*.json | head -1)
+          node checks/open-issue.mjs "$REPORT"

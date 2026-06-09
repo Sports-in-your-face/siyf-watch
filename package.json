@@ -1,0 +1,12 @@
+{
+  "name": "siyf-watch",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Automated SIYF health checks — runs on GitHub Actions, not on user machines",
+  "type": "module",
+  "scripts": {
+    "watch:daily": "node checks/run-daily.mjs",
+    "watch:api": "node checks/api-health.mjs",
+    "watch:engine": "node checks/run-engine.mjs"
+  }
+}

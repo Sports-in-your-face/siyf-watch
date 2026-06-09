@@ -1,0 +1,22 @@
+# Optional: copy to your SIYF app monorepo to trigger siyf-watch engine gate on main pushes.
+# Requires SIYF_WATCH_REPO variable (e.g. your-org/siyf-watch) and SIYF_WATCH_TOKEN secret.
+
+name: Trigger siyf-watch
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'siyf-chrome/**'
+      - 'siyf-api/**'
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch engine check to siyf-watch
+        env:
+          GH_TOKEN: ${{ secrets.SIYF_WATCH_TOKEN }}
+        run: |
+          gh api repos/${{ vars.SIYF_WATCH_REPO }}/dispatches \
+            -f event_type=siyf-engine-check

@@ -1,0 +1,50 @@
+# Run on demand or when the main app repo dispatches an event.
+# Copy templates/monorepo-dispatch.yml into your app repo to auto-trigger on push/PR.
+name: Engine gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      include_live:
+        description: 'Run live smoke (Ring 3)'
+        required: false
+        default: 'true'
+        type: boolean
+  repository_dispatch:
+    types: [siyf-engine-check]
+
+permissions:
+  contents: read
+
+env:
+  SIYF_API_URL: ${{ vars.SIYF_API_URL || 'https://siyf-api.nic-58f.workers.dev' }}
+
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.SIYF_SOURCE_REPO }}
+          path: siyf-app
+          token: ${{ secrets.SIYF_REPO_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: siyf-app/siyf-chrome/package-lock.json
+
+      - name: Install dependencies
+        working-directory: siyf-app/siyf-chrome
+        run: npm ci
+
+      - name: Run engine rings
+        env:
+          SIYF_APP_ROOT: ${{ github.workspace }}/siyf-app
+          SIYF_API_URL: ${{ env.SIYF_API_URL }}
+        run: node checks/run-engine.mjs

@@ -1,0 +1,56 @@
+# Light API probe every 6 hours — catches outages without full engine suite.
+name: API pulse
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  SIYF_API_URL: ${{ vars.SIYF_API_URL || 'https://siyf-api.nic-58f.workers.dev' }}
+
+jobs:
+  pulse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Probe SIYF-API
+        env:
+          SIYF_API_URL: ${{ env.SIYF_API_URL }}
+        run: |
+          mkdir -p reports
+          node checks/api-health.mjs > reports/pulse.json
+
+      - name: Upload pulse report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-pulse-${{ github.run_id }}
+          path: reports/pulse.json
+          retention-days: 14
+
+      - name: Alert on API failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create siyf-watch --color E11D48 --description "Automated health check failure" 2>/dev/null || true
+          gh issue create \
+            --title "SIYF API pulse failed — $(date -u +%Y-%m-%d)" \
+            --label siyf-watch \
+            --body "API pulse workflow failed. Check **API pulse** run logs and \`reports/pulse.json\` artifact.
+
+          API: ${{ env.SIYF_API_URL }}
+
+          _Auto-filed — no user action required._"
