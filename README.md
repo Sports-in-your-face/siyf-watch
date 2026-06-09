@@ -39,7 +39,7 @@ No email to users. No terminal commands for users. You fix the engine/API, push,
 
 ## Future: `siyf-engine` (not yet)
 
-Plan is to eventually ship the parse engine as a cloud-hosted module (`siyf-engine`) so updates roll out to everyone without a local extension rebuild. **That split is not implemented yet** — `siyf-watch` will be the canary that tells us when it's safe to ship.
+[`siyf-engine`](https://github.com/Sports-in-your-face/siyf-engine) is the standalone engine repo. Chrome installs it from GitHub on `npm ci` — set `SIYF_SOURCE_REPO=Sports-in-your-face/siyf-engine` in siyf-watch.
 
 ## Local dev (optional)
 

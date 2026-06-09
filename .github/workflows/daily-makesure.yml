@@ -18,6 +18,7 @@ permissions:
 
 env:
   SIYF_API_URL: ${{ vars.SIYF_API_URL || 'https://siyf-api.nic-58f.workers.dev' }}
+  SIYF_SOURCE_REPO: ${{ vars.SIYF_SOURCE_REPO || 'Sports-in-your-face/siyf-engine' }}
 
 jobs:
   makesure:
@@ -31,7 +32,7 @@ jobs:
       - name: Checkout SIYF app monorepo
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.SIYF_SOURCE_REPO }}
+          repository: ${{ env.SIYF_SOURCE_REPO }}
           path: siyf-app
           token: ${{ secrets.SIYF_REPO_TOKEN }}
 

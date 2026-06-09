@@ -9,10 +9,10 @@ cd siyf-watch
 git init
 git add .
 git commit -m "feat: add siyf-watch automated health checks"
-gh repo create siyf-watch --private --source=. --push
+gh repo create Sports-in-your-face/siyf-watch --private --source=. --push
 ```
 
-(Or create `siyf-watch` on GitHub and push manually.)
+Repo: [**Sports-in-your-face/siyf-watch**](https://github.com/Sports-in-your-face/siyf-watch) (private ops layer).
 
 ## 2. Repository variables
 
