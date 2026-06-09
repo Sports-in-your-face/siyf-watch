@@ -34,14 +34,23 @@ jobs:
           path: siyf-app
           token: ${{ secrets.SIYF_REPO_TOKEN || github.token }}
 
+      - name: Resolve engine path
+        id: paths
+        run: |
+          if [ -f siyf-app/package.json ] && [ -d siyf-app/engine ]; then
+            echo "engine_dir=siyf-app" >> "$GITHUB_OUTPUT"
+          else
+            echo "engine_dir=siyf-app/siyf-chrome" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: siyf-app/siyf-chrome/package-lock.json
+          cache-dependency-path: ${{ steps.paths.outputs.engine_dir }}/package-lock.json
 
       - name: Install dependencies
-        working-directory: siyf-app/siyf-chrome
+        working-directory: ${{ steps.paths.outputs.engine_dir }}
         run: npm ci
 
       - name: Run engine rings
