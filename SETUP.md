@@ -27,7 +27,7 @@ GitHub → **siyf-watch** → Settings → Secrets and variables → Actions →
 
 | Secret | Purpose |
 |--------|---------|
-| `SIYF_REPO_TOKEN` | PAT or fine-grained token with `contents: read` on the app monorepo |
+| `SIYF_REPO_TOKEN` | Optional for public `Sports-in-your-face/siyf-engine` (workflows fall back to `GITHUB_TOKEN`). Required for private monorepos. |
 | `CLOUDFLARE_API_TOKEN` | `wrangler deployments list` in daily makesure |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account (wrangler) |
 

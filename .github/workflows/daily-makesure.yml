@@ -34,7 +34,7 @@ jobs:
         with:
           repository: ${{ env.SIYF_SOURCE_REPO }}
           path: siyf-app
-          token: ${{ secrets.SIYF_REPO_TOKEN }}
+          token: ${{ secrets.SIYF_REPO_TOKEN || github.token }}
 
       - name: Resolve engine + API paths
         id: paths
